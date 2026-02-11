@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test</title>
+<style>
+body { font-family:'Segoe UI',sans-serif; background:linear-gradient(135deg,#667eea,#764ba2); padding:30px; }
+h2 { color:#fff; text-align:center; margin-bottom:30px; }
+.question{ background:#fff; padding:20px; margin-bottom:20px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.1); }
+.question p{ font-weight:600; margin-bottom:10px; }
+label{ display:block; padding:8px 12px; margin:6px 0; border-radius:8px; cursor:pointer; transition:background .2s; }
+label:hover{ background:#f0f3ff; }
+input[type="radio"]{ margin-right:8px; }
+button{ display:block; margin:30px auto; padding:12px 30px; font-size:16px; border:none; border-radius:8px; background:#4c51bf; color:#fff; font-weight:bold; }
+button:hover{ background:#3730a3; }
+.correct{ background:#d4edda !important; color:#155724; font-weight:bold; }
+.wrong{ background:#f8d7da !important; color:#721c24; font-weight:bold; }
+.result{ text-align:center; font-size:20px; margin-top:20px; color:#fff; font-weight:bold; }
+
+@media (max-width:600px){
+  body{ padding:14px; }
+  h2{ font-size:22px; margin-bottom:16px; }
+  .question{ padding:14px; border-radius:10px; }
+  .question p{ font-size:16px; line-height:1.35; }
+  label{ padding:10px 12px; font-size:15px; }
+  button{ width:100%; padding:14px 16px; font-size:16px; }
+  .result{ font-size:18px; }
+}
+</style>
+</head>
+<body>
+
+<h2>Test</h2>
+<form id="quiz"></form>
+<button type="button" id="checkBtn">Yoxla</button>
+<div class="result" id="result"></div>
+
+<script>
+/** Fisher–Yates shuffle (Safari üçün stabil) */
+function shuffleInPlace(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+const questions = [
+  {
+    id: 40,
+    text: "Əmtəələrin qiymətindən tutulan dolayı vergilər hansıdır?",
+    answers: [
+      { text: "Reqressiv", correct: true },
+      { text: "Proporsional", correct: false },
+      { text: "Proqressiv", correct: false },
+      { text: "Sadə proqressiv", correct: false },
+      { text: "Mürəkkəb proqressiv", correct: false },
+    ]
+  },
+  {
+    id: 41,
+    text: "Keçid dövrünün ziddiyətləri hansılardır?",
+    answers: [
+      { text: "Məcburi,inzibati,iqtisadi", correct: false },
+      { text: "Təkamül yoli ilə", correct: false },
+      { text: "İqtisadi münasibətlər sistemi", correct: true },
+      { text: "Normativ qanunvericilik bankası", correct: false },
+      { text: "Həyata keçirilən islahatlar", correct: false },
+    ]
+  },
+  {
+    id: 42,
+    text: "İqtisadiyyatın transformasiyası hansı istiqmətdə həyata keçirilir?",
+    answers: [
+      { text: "İqtisadiyyatın yenidən qurulması", correct: false },
+      { text: "Qlobal problemlərin müəyyənləşdirilməsi", correct: false },
+      { text: "Ümumi qanunauyğunluqların öyrənilməsi", correct: false },
+      { text: "Liberallaşdırma,sabitləşdirmə,özəlləşdirmə", correct: true },
+      { text: "İqtisadiyyatın yeniləşməsi meilləri", correct: false },
+    ]
+  },
+  {
+    id: 43,
+    text: "İqtisadiyyatın başlıca probleminin həllinin təşkili və idarə olunması nədir?",
+    answers: [
+      { text: "İqtisadi sistem", correct: true },
+      { text: "İstehsal imkanları", correct: false },
+      { text: "İstehsal xərcləri", correct: false },
+      { text: "Gəlirlərin səviyyəsi", correct: false },
+      { text: "Məhsuldar qüvvələr", correct: false },
+    ]
+  },
+  {
+    id: 44,
+    text: "İqtisadi sisteminin formaları hansılardır?",
+    answers: [
+      { text: "Bazar,qarışıq", correct: false },
+      { text: "Ənənəvi,inzibati-amillik", correct: false },
+      { text: "İnzibati-amillik,qarışıq", correct: false },
+      { text: "Bazar,qarışıq,inzibati-amillik,ənənəvi", correct: true },
+      { text: "Təlabatların ödənilməsi,resuslardan səmərəli istifadə", correct: false },
+    ]
+  },
+  {
+    id: 45,
+    text: "Bazar iqtisadiyyatının modelinin növləri hansılardır?",
+    answers: [
+      { text: "Liberal,sosial,sosial-demokratik", correct: true },
+      { text: "Bazar yönümlü", correct: false },
+      { text: "Bazar subyektləri", correct: false },
+      { text: "Makroiqtisadi proseslər", correct: false },
+      { text: "Mikroiqtisadi proseslər", correct: false },
+    ]
+  },
+  {
+    id: 46,
+    text: "Azərbaycanda bazar iqtisadiyyatı modeli hansıdır?",
+    answers: [
+      { text: "Şok terapiyası", correct: false },
+      { text: "Liberal modeli", correct: false },
+      { text: "Sosial yönümlü", correct: true },
+      { text: "Amerikan modeli", correct: false },
+      { text: "İsveşrə modeli", correct: false },
+    ]
+  },
+  {
+    id: 47,
+    text: "Beynəlxalq hesablaşmalar hansılardır?",
+    answers: [
+      { text: "Çeklərlə hesablaşmalar", correct: false },
+      { text: "Nağd hesablaşmalar", correct: false },
+      { text: "Nostro-noro hesablaşmaları", correct: true },
+      { text: "Planlı hesablaşmalar", correct: false },
+      { text: "Nağdsız hesablaşmalar", correct: false },
+    ]
+  },
+  {
+    id: 48,
+    text: "Lizinq əməliyyatı aşağıdakılardan hansılardır?",
+    answers: [
+      { text: "Bağışlamaq", correct: false },
+      { text: "Alqı-satqı", correct: false },
+      { text: "Kommersiya", correct: false },
+      { text: "İcarə", correct: true },
+      { text: "Heçbirinə", correct: false },
+    ]
+  },
+  {
+    id: 49,
+    text: "Təlabatdan artıq pul buraxılması nə ilə nəticələnir?",
+    answers: [
+      { text: "Pulun qıtlığı ilə", correct: false },
+      { text: "Pulun müəssəli yığımı ilə", correct: false },
+      { text: "Pulun əhalidən yığımı ilə", correct: false },
+      { text: "Pulun qiymətdən düşməsi ilə", correct: true },
+      { text: "Qiymətin qalxması ilə", correct: false },
+    ]
+  },
+  {
+    id: 50,
+    text: "Mənfəət vergisinin ödəyiciləri kimlər hesab olunur?",
+    answers: [
+      { text: "Xüsusi sahibkarlar", correct: false },
+      { text: "Dövlət müəssələri", correct: false },
+      { text: "Müştəri müəssələri", correct: false },
+      { text: "Fərdi müəssələri", correct: false },
+      { text: "Bütün növ müəssələrin təşkilatları", correct: true },
+    ]
+  },
+  {
+    id: 51,
+    text: "Pulun qədərinin dəyişdirilməsi necə adlanır?",
+    answers: [
+      { text: "Revolivasiya", correct: false },
+      { text: "Defilyasiya", correct: false },
+      { text: "Devalivasiya", correct: false },
+      { text: "Denominasiya", correct: true },
+      { text: "İnflyasiya", correct: false },
+    ]
+  },
+  {
+    id: 52,
+    text: "Hazırda sosial xarakterli fondlar fəaliyyat göstərir?",
+    answers: [
+      { text: "Neft fondu", correct: false },
+      { text: "Məşğulluq fondu", correct: false },
+      { text: "Sosial müdafiə fondu", correct: false },
+      { text: "Sahibkarlığa kömək milli fondu", correct: false },
+      { text: "Sosial müdafiə,pensiya fondu", correct: true },
+    ]
+  },
+  {
+    id: 53,
+    text: "Bəşəriyyət üçün həlli zəruri olan, bütün dünya ölkələrinin və beynəlxalq təşkilatların iştirakı ilə həll oluna bilən hadisələr nə adlanır?",
+    answers: [
+      { text: "Dünya problemləri", correct: false },
+      { text: "Bəşəri problemlər", correct: false },
+      { text: "Qlobal problemlər", correct: true },
+      { text: "İqtisadi problemlər", correct: false },
+      { text: "Siyasi problemlər", correct: false },
+    ]
+  },
+  {
+    id: 54,
+    text: "Qlobal iqtisadi problemlərin sosial-iqtisadi mahiyyəti nədir?",
+    answers: [
+      { text: "Energetka,xammal,yanacaq probleminin həlli", correct: false },
+      { text: "Ekalogiya,energetka,xammal,ərzaq və.s. prob. həlli", correct: true },
+      { text: "İşsizlik problemlərinin həlli", correct: false },
+      { text: "Ətraf mühitin qorunması problemi həlli", correct: false },
+      { text: "Energetika probleminin həlli", correct: false },
+    ]
+  },
+  {
+    id: 55,
+    text: "Azərbaycan neçənci ildən İslam Konfransı Təşkilatının üzvüdür?",
+    answers: [
+      { text: "8 dekabr 1991-ci il", correct: true },
+      { text: "5 iyun 1992-ci il", correct: false },
+      { text: "3 fevral 1993-cü il", correct: false },
+      { text: "9 mart 1995-ci il", correct: false },
+      { text: "3 iyun 1994-cü il", correct: false },
+    ]
+  },
+  {
+    id: 56,
+    text: "Bimetalizmin neçə növü mövcuddur?",
+    answers: [
+      { text: "Paralel valyuta sistemi", correct: false },
+      { text: "İkili valyuta sistemi", correct: false },
+      { text: "Paralel və ilkin valyuta sistemi", correct: false },
+      { text: "Axsayan,paralel,ikili valyuta sistemi", correct: true },
+      { text: "Axsayan və ikili valyuta sistemi", correct: false },
+    ]
+  },
+  {
+    id: 57,
+    text: "Səhm və uzunmüddətli öhdəliklərlə bağlı əməliyyatları özündə əks etdirən investisiya hansıdır?",
+    answers: [
+      { text: "Diğər investisiyalar", correct: false },
+      { text: "Xarici investisiyalar", correct: false },
+      { text: "Potfel investisiyaları", correct: true },
+      { text: "Birbaşa investisiyalar", correct: false },
+      { text: "Transferlər", correct: false },
+    ]
+  },
+  {
+    id: 58,
+    text: "Beynəlxalq əmək bölgüsünün ən mühüm formaları və əsas elementləri hansılardır?",
+    answers: [
+      { text: "Təmərküzləşmə", correct: false },
+      { text: "İxtisaslaşma və koordinasiyalaşdırma", correct: true },
+      { text: "Mərkəzləşmə və ixtisaslaşma", correct: false },
+      { text: "Koordinasiyalaşdırma və mərkəzləşmə", correct: false },
+      { text: "Təmərküzləşmə və mərkəzləşmə", correct: false },
+    ]
+  },
+  {
+    id: 59,
+    text: "Ölkənin iqtisadi sərhədlərinin mühafizəsi sistemi nədir?",
+    answers: [
+      { text: "Xarici ticarət", correct: false },
+      { text: "Beynəlxalq ticarət", correct: false },
+      { text: "Kömrük", correct: true },
+      { text: "Kömrük infrastrukturu", correct: false },
+      { text: "Kömrük terminalı", correct: false },
+    ]
+  },
+  {
+    id: 60,
+    text: "M=PQ/X formulu ilə nə müəyyən olunur?",
+    answers: [
+      { text: "Tədavül üçün lazım olan pulun miqdarı", correct: true },
+      { text: "Tədiyyə üçün lazım olan pulun miqdarı", correct: false },
+      { text: "Təklif üçün zəruri olan pulun miqdarı", correct: false },
+      { text: "Tələb üçün lazım olan pulun miqdarı", correct: false },
+      { text: "Yığım üçün lazım olan pulun miqdarı", correct: false },
+    ]
+  },
+  {
+    id: 61,
+    text: "Pul vəsaitləri fondlarının bölgüsü, yenidən bölgüsü və istifadəsi ilə əlaqədar yaranan münasibətlər sistemi nədir?",
+    answers: [
+      { text: "Kredit", correct: false },
+      { text: "Maliyyə", correct: true },
+      { text: "Mübadilə", correct: false },
+      { text: "Qiymət", correct: false },
+      { text: "Dəyər", correct: false },
+    ]
+  },
+  {
+    id: 62,
+    text: "Müəssisə, idarə və təşkilatların, dövlət, sığorta və kreditləşmə sisteminin maliyyəsi nədir?",
+    answers: [
+      { text: "Maliyyə sistemi", correct: true },
+      { text: "Kredit sistemi", correct: false },
+      { text: "Pul və kredit sistemi", correct: false },
+      { text: "Sığorta sistemi", correct: false },
+      { text: "Dövlət sistemi", correct: false },
+    ]
+  },
+  {
+    id: 63,
+    text: "Büdcə kəsirinin baş vermə səbəbləri hansıdır?",
+    answers: [
+      { text: "İqtisadiyyata böyük həcmdə kapital qoyuluşları", correct: true },
+      { text: "İqtisadiyyatda baş verən müsbət saldonon əmələ gəlməsi", correct: false },
+      { text: "İqtisadiyyatda baş verən mənfi saldonon əmələ gəlməsi", correct: false },
+      { text: "Sosial-iqtisadi hadisələrin təsiri", correct: false },
+      { text: "Dövlətin maliyyə-kredit siyasəti", correct: false },
+    ]
+  },
+  {
+    id: 64,
+    text: "Büdcə kəsirinin baş vermə səbəbləri hansıdır?",
+    answers: [
+      { text: "Fövqalədə baş verən hadisələr", correct: true },
+      { text: "Sosial-iqtisadi hadisələrin təsiri", correct: false },
+      { text: "Dövlətin maliyyə siyasəti", correct: false },
+      { text: "Dövlətin kredit siyasəti", correct: false },
+      { text: "Dövlətin büdcə siyasəti", correct: false },
+    ]
+  },
+  {
+    id: 65,
+    text: "İqtisadiyyatda baş verən dəyişikliklər üzündən tənəzzül, böhran, artım hansı halda baş verir?",
+    answers: [
+      { text: "Dövlətin maliyyə problemləri olduqda", correct: false },
+      { text: "Dövlətin kredit problemləri olduqda", correct: false },
+      { text: "Büdcə kəsiri baş verdikdə", correct: true },
+      { text: "Dövlətin iqtisadi siyasəti zəiflədikdə", correct: false },
+      { text: "Dövlətdə müsbət saldo yarandıqda", correct: false },
+    ]
+  },
+  {
+    id: 66,
+    text: "Azər. Res.-nın müasir bank sisteminin strukturunun neçə amili var?",
+    answers: [
+      { text: "5 amili", correct: false },
+      { text: "6 amili", correct: false },
+      { text: "4 amili", correct: true },
+      { text: "3 amili", correct: false },
+      { text: "2 amili", correct: false },
+    ]
+  },
+  {
+    id: 67,
+    text: "Aşağıdakılardan hansı bank sisteminin strukturunun amilinə aiddir?",
+    answers: [
+      { text: "Kredit idarələrinin iki funksiyasının olmasıdır", correct: true },
+      { text: "Kredit idarələrinin üç funksiyasının olmasıdır", correct: false },
+      { text: "Kredit idarələrinin dörd funksiyasının olmasıdır", correct: false },
+      { text: "Kredit idarələrinin beş funksiyasının olmasıdır", correct: false },
+      { text: "Kredit idarələrinin bir funksiyasının olmasıdır", correct: false },
+    ]
+  },
+  {
+    id: 68,
+    text: "Sahibi tərəfindən müxtəlif sahələrdə yerləşdirdiyi pul vəsaitlərindən gəlir almaq hüququnu təsdiqləyən sənəd nədir?",
+    answers: [
+      { text: "Vekseldir", correct: false },
+      { text: "Əmanət sertifakatlarıdır", correct: false },
+      { text: "Qiymətli kağızlardır", correct: true },
+      { text: "Borc formasında səhmlərdir", correct: false },
+      { text: "Adi və köçürmə veksellərdir", correct: false },
+    ]
+  },
+  {
+    id: 69,
+    text: "Əmtəə kapitalı formasında fəaliyyətdə olan sahibkarların bir-birinə verdiyi kredit hansıdır?",
+    answers: [
+      { text: "İnvestisiya krediti", correct: false },
+      { text: "Bank krediti", correct: false },
+      { text: "İpoteka krediti", correct: false },
+      { text: "Kommersiya krediti", correct: true },
+      { text: "Xarici kredit", correct: false },
+    ]
+  },
+  {
+    id: 70,
+    text: "İqtisadiyyatın inkişaf qanunları necə adlanır?",
+    answers: [
+      { text: "Obyektiv qanunlar", correct: false },
+      { text: "Subyektiv qanunlar", correct: false },
+      { text: "Hüquqi qanunlar", correct: false },
+      { text: "Tənzimlənən qanunlar", correct: false },
+      { text: "İqtisadi qanunlar", correct: true },
+    ]
+  },
+  {
+    id: 71,
+    text: "İş qüvvəsinin alqı-satqısı sövdəsində fəhlə və sahibkarlar arasında vasitəçilik edən idarə hansıdır?",
+    answers: [
+      { text: "Əmtəə birjası", correct: false },
+      { text: "Əmək bölgüsü", correct: true },
+      { text: "Kapital birjası", correct: false },
+      { text: "Valyuta birjası", correct: false },
+      { text: "Xidmətlər və əmtəə birjası", correct: false },
+    ]
+  },
+  {
+    id: 72,
+    text: "Əsas vəsaitlərin maddi köhnəlməsi nəticəsində, bu vəsaitlərin öz istehlak dəyərini itirməsi nə adlanır?",
+    answers: [
+      { text: "Aşınma", correct: false },
+      { text: "Mənəvi aşınma", correct: false },
+      { text: "Fiziki aşınma", correct: true },
+      { text: "Dəyərdən düşmə", correct: false },
+      { text: "Dəyərsizləşmə", correct: false },
+    ]
+  },
+  {
+    id: 73,
+    text: "İstehsal prosesində uzun müddət iştirak edib öz dəyərini hazır məhsula hissə-hissə keçirən əsas vəsaitlər hansılardır?",
+    answers: [
+      { text: "Əsas fondlar", correct: true },
+      { text: "Dövriyyə fondları", correct: false },
+      { text: "Tədavül fondları", correct: false },
+      { text: "Tədiyyə fondları", correct: false },
+      { text: "Mənəvi fondlar", correct: false },
+    ]
+  },
+  {
+    id: 74,
+    text: "Fondun təşkil edilməsində vəsaitlərin xərclənməsi və daxil olmasında ortaq olmaq norması, həddi və ölçüsü nə deməkdir?",
+    answers: [
+      { text: "Üzən valyuta", correct: false },
+      { text: "Valyuta səbəbi", correct: false },
+      { text: "Valyuta bonusu", correct: false },
+      { text: "Kvota", correct: true },
+      { text: "Sabit valyuta", correct: false },
+    ]
+  },
+  {
+    id: 75,
+    text: "Cənubi Asiya Regional Əməkdaşlıq Assosiasiyası (SAARK) neçənci ildə yaranıb?",
+    answers: [
+      { text: "1980", correct: false },
+      { text: "1970", correct: false },
+      { text: "1975", correct: false },
+      { text: "1984", correct: false },
+      { text: "1985", correct: true },
+    ]
+  },
+  {
+    id: 76,
+    text: "Müxtəlif ölkələrin bir-birinə verdiyi kredit nə adlanır?",
+    answers: [
+      { text: "Bank krediti", correct: false },
+      { text: "İnvestisiya krediti", correct: false },
+      { text: "Beynəlxalq kredit", correct: true },
+      { text: "İstehlak krediti", correct: false },
+      { text: "İpoteka krediti", correct: false },
+    ]
+  },
+  {
+    id: 77,
+    text: "Qiymətli kağızlar necə formada olur?",
+    answers: [
+      { text: "Pay", correct: false },
+      { text: "Borc", correct: false },
+      { text: "Səhm", correct: false },
+      { text: "Səhm-istiqraz-veksel", correct: false },
+      { text: "Pay-borc", correct: true },
+    ]
+  },
+  {
+    id: 78,
+    text: "İqtisadiyyata mövcud əsas pul növləri hansılardır?",
+    answers: [
+      { text: "Xəzinə biletləri və xırda qiymətlər", correct: false },
+      { text: "Kredit bank biletləri", correct: false },
+      { text: "Kredit bank biletləri, xəzinə biletləri və xırda qiymətlər", correct: true },
+      { text: "Xırda şirkətlər və kredit bank biletləri", correct: false },
+      { text: "Kağız pullar və bank biletləri", correct: false },
+    ]
+  },
+  {
+    id: 79,
+    text: "Bank sistemi neçə qrupdan ibarətdir?",
+    answers: [
+      { text: "Mərkəzi bank, kommersiya bankları", correct: false },
+      { text: "İxtisaslaşmış əməliyyə kredit və Mərkəzi bank", correct: false },
+      { text: "Mərkəzi bank, universal və ixtisaslaşmış bank", correct: false },
+      { text: "Mərkəzi bank, ixtisaslaşmış maliyyə-kredit institutları", correct: false },
+      { text: "Mərkəzi bank, kommersiya bankları və ixtisaslaşmış maliyyə-kredit institutları", correct: true },
+    ]
+  },
+  {
+    id: 80,
+    text: "Rəqabətdən asılı olaraq bazar neçə tipə ayrılır?",
+    answers: [
+      { text: "Azad və qeyri mükəmməl rəqabət bazar", correct: true },
+      { text: "Azad rəqabətli bazar", correct: false },
+      { text: "Qeyri mükəmməl rəqabətli bazar", correct: false },
+      { text: "Mükəmməl bazar", correct: false },
+      { text: "İnhisarçı bazar", correct: false },
+    ]
+  },
+];
+
+let rendered = []; // render zamanı qarışmış versiya
+
+function renderQuiz(){
+  const quiz = document.getElementById("quiz");
+  quiz.innerHTML = "";
+
+  rendered = questions.map(q => ({
+    id: q.id,
+    text: q.text,
+    answers: shuffleInPlace(q.answers.map(a => ({...a}))) // cavablar qarışsın
+  }));
+
+  shuffleInPlace(rendered); // suallar qarışsın
+
+  rendered.forEach((q, index) => {
+    const div = document.createElement("div");
+    div.className = "question";
+    div.innerHTML = `<p>${q.id}. ${q.text}</p>`;
+
+    q.answers.forEach((a, ai) => {
+      const inputId = `q${index}_a${ai}`;
+      div.innerHTML += `
+        <label for="${inputId}">
+          <input id="${inputId}" type="radio" name="q${index}" value="${a.correct ? "1" : "0"}">
+          ${a.text}
+        </label>`;
+    });
+
+    quiz.appendChild(div);
+  });
+
+  document.getElementById("result").textContent = "";
+}
+
+function checkAnswers(){
+  let score = 0;
+  const questionDivs = document.querySelectorAll(".question");
+
+  questionDivs.forEach((qDiv, qi) => {
+    const radios = qDiv.querySelectorAll('input[type="radio"]');
+
+    radios.forEach(radio => {
+      const label = radio.parentElement;
+
+      if(radio.checked){
+        if(radio.value === "1"){
+          score++;
+          label.classList.add("correct");
+        } else {
+          label.classList.add("wrong");
+        }
+      }
+
+      if(radio.value === "1"){
+        label.classList.add("correct"); // düzgün cavabı göstər
+      }
+
+      radio.disabled = true;
+    });
+  });
+
+  document.getElementById("result").textContent =
+    `Düzgün cavab sayı: ${score} / ${rendered.length}`;
+}
+
+document.getElementById("checkBtn").addEventListener("click", checkAnswers);
+
+document.addEventListener("DOMContentLoaded", renderQuiz);
+</script>
+
+</body>
+</html>
